@@ -1,14 +1,14 @@
-import THREE from "three"
 import Stats from "stats-js"
 
 import MouseControls from "./MouseControls"
 
-import vertexShader from "./shader/vertexShader.glsl"
 import fragmentShader from "./shader/fragmentShader.glsl"
+import vertexShader from "./shader/vertexShader.glsl"
 
-import defaultNoiseImage from "../assets/textures/noise/default-noise-texture.png"
+import * as THREE from "three"
+import { BoxGeometry, Camera, Clock, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry, PointLight, Points, RepeatWrapping, Scene, ShaderMaterial, SphereGeometry, TextureLoader, TorusKnotGeometry, UniformsLib, UniformsUtils, Vector3, WebGLRenderer } from "three"
 import defaultBackgroundImage from "../assets/textures/background/default-background.jpg"
-import defaultColorImage from "../assets/textures/color/default-color-texture.png"
+import defaultNoiseImage from "../assets/textures/noise/default-noise-texture.png"
 
 export default class View {
   constructor(model) {
@@ -16,7 +16,7 @@ export default class View {
 
     this.subscribeToModel()
 
-    this.clock = new THREE.Clock(false)
+    this.clock = new Clock(false)
     this.step = 0.0
 
     this.loadNoiseTexture()
@@ -24,7 +24,7 @@ export default class View {
 
     this.updateRenderer()
 
-    this.scene = new THREE.Scene()
+    this.scene = new Scene()
     this.camera = this.createPerspectiveCamera()
     this.lights = this.createLights()
     for (const light in this.lights) {
@@ -35,8 +35,8 @@ export default class View {
     this.object3D = this.createObject3D(this.createGeometry(), this.shaderMaterial)
     this.scene.add(this.object3D)
 
-    this.backgroundScene = new THREE.Scene()
-    this.backgroundCamera = new THREE.Camera()
+    this.backgroundScene = new Scene()
+    this.backgroundCamera = new Camera()
     this.backgroundPlane = this.createBackgroundPlane()
     this.backgroundScene.add(this.backgroundCamera)
     this.backgroundScene.add(this.backgroundPlane)
@@ -85,7 +85,7 @@ export default class View {
 
     this.model.on("change:ambientLight", (model, value) => {
       const { r, g, b } = this.getColor(value)
-      this.object3D.material.uniforms.uAmbientLight.value = new THREE.Vector3(r, g, b)
+      this.object3D.material.uniforms.uAmbientLight.value = new Vector3(r, g, b)
     })
 
     this.model.on("change:directionalLightX", (model, value) => {
@@ -193,9 +193,9 @@ export default class View {
       if (value === "None") {
         material.map = null
       } else if (value === "default") {
-        material.map = THREE.ImageUtils.loadTexture(defaultBackgroundImage)
+        material.map = new TextureLoader().load(defaultBackgroundImage)
       } else {
-        material.map = THREE.ImageUtils.loadTexture(`textures/${value}`)
+        material.map = new TextureLoader().load(`textures/${value}`)
       }
 
       material.needsUpdate = true
@@ -227,7 +227,7 @@ export default class View {
   createRenderer() {
     const preserveDrawingBuffer = this.model.attributes.preserveDrawingBuffer
 
-    const renderer = new THREE.WebGLRenderer({
+    const renderer = new WebGLRenderer({
       preserveDrawingBuffer,
       antialias: true,
       alpha: true
@@ -240,7 +240,7 @@ export default class View {
 
     renderer.sortObjects = false
 
-    renderer.context.getExtension("OES_standard_derivatives")
+    renderer.getContext().getExtension("OES_standard_derivatives")
     renderer.setClearColor(0xffffff, 1)
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setPixelRatio(window.devicePixelRatio)
@@ -262,8 +262,8 @@ export default class View {
   }
 
   loadTexture(filePath, uniformName) {
-    new THREE.TextureLoader().load(filePath, (texture) => {
-      texture.wrapT = texture.wrapS = THREE.RepeatWrapping
+    new TextureLoader().load(filePath, (texture) => {
+      texture.wrapT = texture.wrapS = RepeatWrapping
       this.object3D.material.uniforms[uniformName].value = texture
     })
   }
@@ -272,9 +272,9 @@ export default class View {
     const { cameraPosZ, zoom } = this.model.attributes
 
     const aspect = window.innerWidth / window.innerHeight
-    const camera = new THREE.PerspectiveCamera(75, aspect, 0.01, 1000)
+    const camera = new PerspectiveCamera(75, aspect, 0.01, 1000)
     camera.position.z = cameraPosZ
-    camera.lookAt(new THREE.Vector3(0, 0, 0))
+    camera.lookAt(new Vector3(0, 0, 0))
     camera.zoom = zoom
     camera.updateProjectionMatrix()
 
@@ -291,27 +291,27 @@ export default class View {
   createLights() {
     const lights = {}
 
-    lights.directionalLightX = new THREE.DirectionalLight(0xffffff, 0.5)
+    lights.directionalLightX = new DirectionalLight(0xffffff, 0.5)
     lights.directionalLightX.name = "directionalLightX"
     lights.directionalLightX.position.set(1.0, 0.0, 0.0)
     lights.directionalLightX.visible = this.model.attributes.directionalLightX
 
-    lights.directionalLightY = new THREE.DirectionalLight(0xffffff, 0.5)
+    lights.directionalLightY = new DirectionalLight(0xffffff, 0.5)
     lights.directionalLightY.name = "directionalLightY"
     lights.directionalLightY.position.set(0.0, 1.0, 0.0)
     lights.directionalLightY.visible = this.model.attributes.directionalLightY
 
-    lights.directionalLightZ = new THREE.DirectionalLight(0xffffff, 0.5)
+    lights.directionalLightZ = new DirectionalLight(0xffffff, 0.5)
     lights.directionalLightZ.name = "directionalLightZ"
     lights.directionalLightZ.position.set(0.0, 0.0, 1.0)
     lights.directionalLightZ.visible = this.model.attributes.directionalLightZ
 
-    lights.pointLight1 = new THREE.PointLight(0xffffff, 0.5, 1000)
+    lights.pointLight1 = new PointLight(0xffffff, 0.5, 1000)
     lights.pointLight1.name = "pointLight1"
     lights.pointLight1.position.set(1.0, 1.0, 1.0)
     lights.pointLight1.visible = this.model.attributes.pointLight1
 
-    lights.pointLight2 = new THREE.PointLight(0xffffff, 0.5, 1000)
+    lights.pointLight2 = new PointLight(0xffffff, 0.5, 1000)
     lights.pointLight2.name = "pointLight2"
     lights.pointLight2.position.set(-1.0, 1.0, 1.0)
     lights.pointLight2.visible = this.model.attributes.pointLight2
@@ -323,8 +323,8 @@ export default class View {
     const attributes = this.model.attributes
 
     const object3D = attributes.object3d === "THREE.Points" ?
-        new THREE.Points(geometry, material) :
-        new THREE.Mesh(geometry, material)
+        new Points(geometry, material) :
+        new Mesh(geometry, material)
 
     object3D.rotation.x = attributes.rotationX
     object3D.rotation.y = attributes.rotationY
@@ -337,13 +337,13 @@ export default class View {
     const { geometry, segmentsX, segmentsY } = this.model.attributes
 
     if (geometry === "THREE.SphereGeometry") {
-      return new THREE.SphereGeometry(1.0, segmentsX, segmentsY)
+      return new SphereGeometry(1.0, segmentsX, segmentsY)
     } else if (geometry === "THREE.BoxGeometry") {
-      return new THREE.BoxGeometry(1.0, 1.0, 1.0, segmentsX, segmentsX, segmentsX)
+      return new BoxGeometry(1.0, 1.0, 1.0, segmentsX, segmentsX, segmentsX)
     } else if (geometry === "THREE.TorusKnotGeometry") {
-      return new THREE.TorusKnotGeometry(1.0, 0.3, segmentsX, segmentsY)
+      return new TorusKnotGeometry(1.0, 0.3, segmentsX, segmentsY)
     } else if (geometry === "THREE.PlaneGeometry") {
-      return new THREE.PlaneGeometry(1.0, 1.0, segmentsX, segmentsY)
+      return new PlaneGeometry(1.0, 1.0, segmentsX, segmentsY)
     }
   }
 
@@ -351,8 +351,8 @@ export default class View {
     const attributes = this.model.attributes
     const { r, g, b } = this.getColor(attributes.ambientLight)
 
-    return new THREE.ShaderMaterial({
-      side: THREE.DoubleSide,
+    return new ShaderMaterial({
+      side: DoubleSide,
       transparent: true,
       blending: THREE[attributes.blending],
       wireframe: attributes.wireframe,
@@ -362,8 +362,8 @@ export default class View {
       derivatives: true,
       vertexShader,
       fragmentShader,
-      uniforms: THREE.UniformsUtils.merge([
-        THREE.UniformsLib.lights,
+      uniforms: UniformsUtils.merge([
+        UniformsLib.lights,
         {
           uStep: { type: "f", value: this.step },
           uScale: { type: "f", value: attributes.scale },
@@ -373,7 +373,7 @@ export default class View {
           uColorTexture: { type: "t" },
           uOpacity: { type: "f", value: attributes.opacity },
           uAmbientLight: {
-            type: "v3", value: new THREE.Vector3(r, g, b)
+            type: "v3", value: new Vector3(r, g, b)
           },
           uPointSize: { type: "f", value: attributes.pointSize }
         }
@@ -383,21 +383,21 @@ export default class View {
 
   createBackgroundPlane() {
     const { background, backgroundTexture, planeOpacity } = this.model.attributes
-    const geometry = new THREE.PlaneGeometry(2, 2)
+    const geometry = new PlaneGeometry(2, 2)
 
     const { r, g, b } = this.getColor(background)
-    const material = new THREE.MeshBasicMaterial({
+    const material = new MeshBasicMaterial({
       transparent: true,
       opacity: planeOpacity,
-      color: new THREE.Color(r, g, b)
+      color: new Color(r, g, b)
     })
 
-    const backgroundPlane = new THREE.Mesh(geometry, material)
+    const backgroundPlane = new Mesh(geometry, material)
 
     if (backgroundTexture === "default") {
-      backgroundPlane.material.map = THREE.ImageUtils.loadTexture(defaultBackgroundImage)
+      backgroundPlane.material.map =  new TextureLoader().load(defaultBackgroundImage)
     } else {
-      backgroundPlane.material.map = THREE.ImageUtils.loadTexture(`textures/${backgroundTexture}`)
+      backgroundPlane.material.map = new TextureLoader().load(`textures/${backgroundTexture}`)
     }
 
     backgroundPlane.material.depthTest = false
@@ -408,9 +408,9 @@ export default class View {
 
   getColor(value) {
     if (typeof value === "string") {
-      return new THREE.Color(value)
+      return new Color(value)
     } else {
-      return new THREE.Color(value[0] / 255, value[1] / 255, value[2] / 255)
+      return new Color(value[0] / 255, value[1] / 255, value[2] / 255)
     }
   }
 

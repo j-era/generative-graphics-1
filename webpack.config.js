@@ -1,62 +1,42 @@
-var path = require("path")
-var webpack = require("webpack")
-
-var publicPath = path.join(__dirname, "public")
-
-module.exports = {
-  entry: "./src/main.js",
-  output: {
-    path: publicPath,
-    filename: "bundle.js"
+module.exports = (_, { mode }) => ({
+  entry: {
+    main: "./src/main.js",
   },
+  devServer: {
+    host: "0.0.0.0",
+    hot: true,
+  },
+  devtool: mode === "development" ? "eval-source-map" : "source-map",
   module: {
     rules: [
       {
-        oneOf: [
+        test: /\.(png|jpg|gif)$/,
+        use: [
           {
-            test: /\.(png|jpg|gif)$/,
-            use: [
-              {
-                loader: "file-loader",
-                options: {}
-              }
-            ],
-            exclude: /node_modules/
-          },
+            loader: "file-loader",
+            options: {}
+          }
+        ],
+        exclude: /node_modules/
+      },
+      {
+        test: /\.js$/,
+        exclude: /node_modules/,
+        use: [
           {
-            test: /\.js$/,
-            exclude: /node_modules/,
-            use: [
-              {
-                loader: "babel-loader"
-              }
-            ]
-          },
-          {
-            test: /\.json$/,
-            exclude: /node_modules/,
-            use: [
-              {
-                loader: "json-loader"
-              }
-            ]
-          },
-          {
-            test: /\.glsl$/,
-            exclude: /node_modules/,
-            use: [
-              {
-                loader: "raw-loader"
-              }
-            ]
+            loader: "babel-loader"
           }
         ]
       },
-    ]
+      {
+        test: /\.glsl$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: "raw-loader"
+          }
+        ]
+      }
+    ],
   },
-  devServer: {
-    contentBase: publicPath,
-    port: 5000,
-    host: "0.0.0.0"
-  }
-}
+})
