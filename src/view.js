@@ -57,13 +57,15 @@ export default class View {
 
       model.traverse((o) => {
         if (o.isMesh) {
-          console.log(o)
           o.material = this.shaderMaterial
         }
       })
 
-      this.object3D = model.children[0].children[1]
+      this.object3D = model.children[0]
+
       this.scene.add(this.object3D)
+
+      console.log(this.object3D)
 
       this.modelLoaded = true
 
@@ -71,6 +73,8 @@ export default class View {
       this.loadColorTexture()
 
       this.render()
+
+      console.log(this.scene)
 
     }.bind(this));
   }
@@ -99,57 +103,103 @@ export default class View {
     })
 
     this.model.on("change:scale", (model, value) => {
-      this.object3D.material.uniforms.uScale.value = value
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.uniforms.uScale.value = value
+        }
+      })
     })
 
     this.model.on("change:wireframe", (model, value) => {
-      this.object3D.material.wireframe = value
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.wireframe = value
+        }
+      })
     })
 
     this.model.on("change:lineWidth", (model, value) => {
-      this.object3D.material.wireframeLinewidth = value
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.wireframeLinewidth = value
+        }
+      })
     })
 
     this.model.on("change:ambientLight", (model, value) => {
       const { r, g, b } = this.getColor(value)
-      this.object3D.material.uniforms.uAmbientLight.value = new Vector3(r, g, b)
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.uniforms.uAmbientLight.value = new Vector3(r, g, b)
+        }
+      })
     })
 
     this.model.on("change:directionalLightX", (model, value) => {
       this.scene.getObjectByName("directionalLightX").visible = value
-      this.object3D.material.needsUpdate = true
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.needsUpdate = true
+        }
+      })
     })
 
     this.model.on("change:directionalLightY", (model, value) => {
       this.scene.getObjectByName("directionalLightY").visible = value
-      this.object3D.material.needsUpdate = true
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.needsUpdate = true
+        }
+      })
     })
 
     this.model.on("change:directionalLightZ", (model, value) => {
       this.scene.getObjectByName("directionalLightZ").visible = value
-      this.object3D.material.needsUpdate = true
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.needsUpdate = true
+        }
+      })
     })
 
     this.model.on("change:pointLight1", (model, value) => {
       this.scene.getObjectByName("pointLight1").visible = value
-      this.object3D.material.needsUpdate = true
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.needsUpdate = true
+        }
+      })
     })
 
     this.model.on("change:pointLight2", (model, value) => {
       this.scene.getObjectByName("pointLight2").visible = value
-      this.object3D.material.needsUpdate = true
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.needsUpdate = true
+        }
+      })
     })
 
     this.model.on("change:morph", (model, value) => {
-      const uMorph = this.object3D.material.uniforms.uMorph
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          const uMorph = o.material.uniforms.uMorph
 
-      if (value === "off") {
-        uMorph.value = 0
-      } else if (value === "forwards") {
-        uMorph.value = 1
-      } else if (value === "backwards") {
-        uMorph.value = 2
-      }
+          if (value === "off") {
+            uMorph.value = 0
+          } else if (value === "forwards") {
+            uMorph.value = 1
+          } else if (value === "backwards") {
+            uMorph.value = 2
+          }
+        }
+      })
     })
 
     this.model.on("change:segmentsX", () => {
@@ -183,20 +233,36 @@ export default class View {
     })
 
     this.model.on("change:depthTest", (model, value) => {
-      this.object3D.material.depthTest = value
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.depthTest = value
+        }
+      })
     })
 
     this.model.on("change:opacity", (model, value) => {
-      this.object3D.material.uniforms.uOpacity.value = value
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.uniforms.uOpacity.value = value
+        }
+      })
     })
 
     this.model.on("change:blending", (model, value) => {
-      this.object3D.material.blending = THREE[value]
-      this.object3D.material.needsUpdate = true
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.blending = THREE[value]
+          o.material.needsUpdate = true
+        }
+      })
     })
 
     this.model.on("change:pointSize", (model, value) => {
-      this.object3D.material.uniforms.uPointSize.value = value
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.uniforms.uPointSize.value = value
+        }
+      })
     })
 
     this.model.on("change:preserveDrawingBuffer", () => {
@@ -291,8 +357,12 @@ export default class View {
   loadTexture(filePath, uniformName) {
     new TextureLoader().load(filePath, (texture) => {
       texture.wrapT = texture.wrapS = RepeatWrapping
-      this.object3D.material.uniforms[uniformName].value = texture
-      
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          o.material.uniforms[uniformName].value = texture
+        }
+      })
     })
   }
 
@@ -466,17 +536,19 @@ export default class View {
 
   updateStep(deltaTime) {
     const { pause, speed } = this.model.attributes
-    const uStep = this.object3D.material.uniforms.uStep
 
-    if (!pause) {
-      this.step += deltaTime * speed * 0.01
-      uStep.value = this.step
-    }
+    this.object3D.traverse((o) => {
+      if (o.isMesh) {
+        if (!pause) {
+          this.step += deltaTime * speed * 0.01
+          o.material.uniforms.uStep.value = this.step
+        }
+      }
+    })
   }
 
   updateMorphStep(deltaTime) {
     const { morph, morphStep, pause, speed } = this.model.attributes
-    const uMorphStep = this.object3D.material.uniforms.uMorphStep
 
     const factor = {
       off: 0,
@@ -488,7 +560,14 @@ export default class View {
 
     if (!pause) {
       this.model.set({ morphStep: newMorphStep })
-      uMorphStep.value = newMorphStep
+
+      this.object3D.traverse((o) => {
+        if (o.isMesh) {
+          if (!pause) {
+            o.material.uniforms.uMorphStep.value = newMorphStep
+          }
+        }
+      })
     }
   }
 

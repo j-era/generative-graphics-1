@@ -16,7 +16,7 @@
           255
         ],
         "backgroundTexture": "default",
-        "scale": 0.15507104469147526,
+        "scale": 0.5507104469147526,
         "wireframe": false,
         "lineWidth": 1,
         "ambientLight": [
@@ -42,7 +42,7 @@
         "zoom": 3,
         "cameraPosZ": 1.5,
         "depthTest": false,
-        "speed": 0.952579274533348,
+        "speed": 0.1,
         "blending": "NormalBlending",
         "opacity": 0.07753552234573763,
         "pause": false,
