@@ -4,45 +4,40 @@ Generative and animated graphic. The basic motion of the graphic is controlled b
 
 ## Development setup
 
-### Requirements
-
-* [Node](https://nodejs.org/en/download/)
-
 ### Run
 
 ```bash
 npm install
 npm run watch
-
-Open http://localhost:5000/webpack-dev-server/
 ```
 
 ### Change textures
 
-* Noise texture:
-  * A perlin noise textures can be generated with Gimp and the [Solid Noise Plugin](https://docs.gimp.org/en/plug-in-solid-noise.html)
-    * Use the sample assets/texture_sample.xcf
-    * For each layer:
-      * Filter -> Render -> Clouds -> Solid Noise...
-        * Check "Tilable"
-        * Cick "New Seed"
-      * Colors -> Colorize... -> Red/Green/Blue (One color for each layer)
-      * Layer Mode: Difference
-    * Export as png
-  * 512x512
-  * Directory: public/textures/noise
+- Noise texture:
 
+  - A perlin noise textures can be generated with Gimp and the [Solid Noise Plugin](https://docs.gimp.org/en/plug-in-solid-noise.html)
+    - Use the sample assets/texture_sample.xcf
+    - For each layer:
+      - Filter -> Render -> Clouds -> Solid Noise...
+        - Check "Tilable"
+        - Cick "New Seed"
+      - Colors -> Colorize... -> Red/Green/Blue (One color for each layer)
+      - Layer Mode: Difference
+    - Export as png
+  - 512x512
+  - Directory: public/textures/noise
 
-* Color texture:
-  * 512x512
-  * Directory: public/textures/color
+- Color texture:
 
+  - 512x512
+  - Directory: public/textures/color
 
-* Background texture:
-  * 1920x1080
-  * Directory: public/textures/background
+- Background texture:
+  - 1920x1080
+  - Directory: public/textures/background
 
 Add filenames in model.js constants:
+
 ```
 export const noiseTextures = [
   ...,
