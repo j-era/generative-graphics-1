@@ -30,7 +30,7 @@ export default class View {
       this.scene.add(this.lights[light])
     }
 
-    this.shaderMaterial = this.createShaderMaterial()
+    // this.shaderMaterial = this.createShaderMaterial()
 
     this.backgroundScene = new Scene()
     this.backgroundCamera = new Camera()
@@ -54,16 +54,54 @@ export default class View {
 
     gltfLoader.load('model.gltf', function (gltf) {
       const model = gltf.scene;
-
       model.position.y = -0.3
 
       model.scale.x = 0.005
       model.scale.y = 0.005
       model.scale.z = 0.005
 
+      const attributes = this.model.attributes
+      const { r, g, b } = this.getColor(attributes.ambientLight)
+
       model.traverse((o) => {
         if (o.isMesh) {
-          o.material = this.shaderMaterial
+          o.material.onBeforeCompile = function (shader) {
+            shader.uniforms = UniformsUtils.merge([
+              shader.uniforms,
+              // UniformsLib.lights, // ?
+              {
+                uStep: { type: "f", value: this.step },
+                uScale: { type: "f", value: attributes.scale },
+                uMorph: { type: "i", value: 0 },
+                uMorphStep: { type: "f", value: this.morphStep },
+                uNoiseTexture: { type: "t" },
+                // uColorTexture: { type: "t" },
+                // uOpacity: { type: "f", value: attributes.opacity },
+                // uAmbientLight: {
+                //   type: "v3", value: new Vector3(r, g, b)
+                // },
+                uPointSize: { type: "f", value: attributes.pointSize }
+              }
+            ])
+
+            console.log(shader.vertexShader)
+
+            shader.vertexShader = vertexShader
+          
+            o.material.userData.shader = shader;
+            console.log(shader.fragmentShader)
+          }
+
+          o.material.side = DoubleSide
+          o.material.transparent = true
+          o.material.blending = THREE[attributes.blending]
+          o.material.wireframe = attributes.wireframe
+          o.material.wireframeLinewidth = attributes.lineWidth
+          o.material.depthTest = attributes.depthTest
+          o.material.lights = true
+          o.material.derivatives = true
+
+          // o.material = this.shaderMaterial
         }
       })
 
@@ -71,17 +109,12 @@ export default class View {
 
       this.scene.add(this.object3D)
 
-      console.log(this.object3D)
-
       this.modelLoaded = true
 
       this.loadNoiseTexture()
       this.loadColorTexture()
 
       this.render()
-
-      console.log(this.scene)
-
     }.bind(this));
   }
 
@@ -100,7 +133,7 @@ export default class View {
 
     this.model.on("change:object3d", () => {
       this.scene.remove(this.object3D)
-      this.object3D = this.createObject3D(this.object3D.geometry, this.shaderMaterial)
+      // this.object3D = this.createObject3D(this.object3D.geometry, this.shaderMaterial)
       this.scene.add(this.object3D)
     })
 
@@ -111,7 +144,7 @@ export default class View {
     this.model.on("change:scale", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.uniforms.uScale.value = value
+          o.material.userData.shader.uniforms.uScale.value = value
         }
       })
     })
@@ -137,7 +170,7 @@ export default class View {
 
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.uniforms.uAmbientLight.value = new Vector3(r, g, b)
+          o.material.userData.shader.uniforms.uAmbientLight.value = new Vector3(r, g, b)
         }
       })
     })
@@ -195,7 +228,7 @@ export default class View {
     this.model.on("change:morph", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uMorph = o.material.uniforms.uMorph
+          const uMorph = o.material.userData.shader.uniforms.uMorph
 
           if (value === "off") {
             uMorph.value = 0
@@ -249,7 +282,7 @@ export default class View {
     this.model.on("change:opacity", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.uniforms.uOpacity.value = value
+          o.material.userData.shader.uniforms.uOpacity.value = value
         }
       })
     })
@@ -266,7 +299,7 @@ export default class View {
     this.model.on("change:pointSize", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.uniforms.uPointSize.value = value
+          o.material.userData.shader.uniforms.uPointSize.value = value
         }
       })
     })
@@ -366,7 +399,7 @@ export default class View {
 
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.uniforms[uniformName].value = texture
+          o.material.userData.shader.uniforms[uniformName].value = texture
         }
       })
     })
@@ -547,7 +580,11 @@ export default class View {
       if (o.isMesh) {
         if (!pause) {
           this.step += deltaTime * speed * 0.01
-          o.material.uniforms.uStep.value = this.step
+
+          const shader = o.material.userData.shader;
+          if (shader) {
+            shader.uniforms.uStep.value = this.step
+          }
         }
       }
     })
@@ -570,7 +607,10 @@ export default class View {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
           if (!pause) {
-            o.material.uniforms.uMorphStep.value = newMorphStep
+            const shader = o.material.userData.shader;
+            if (shader) {
+              shader.uniforms.uMorphStep.value = newMorphStep
+            }
           }
         }
       })
