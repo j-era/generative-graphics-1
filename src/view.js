@@ -10,6 +10,7 @@ import { BoxGeometry, Camera, Clock, Color, DirectionalLight, DoubleSide, Mesh, 
 import defaultBackgroundImage from "../assets/textures/background/default-background.jpg"
 import defaultNoiseImage from "../assets/textures/noise/default-noise-texture.png"
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
 
 export default class View {
   constructor(model) {
@@ -46,6 +47,11 @@ export default class View {
 
   init() {
     const gltfLoader = new GLTFLoader().setPath("/");
+
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath( 'draco/' );
+    gltfLoader.setDRACOLoader( dracoLoader );
+
     gltfLoader.load('model.gltf', function (gltf) {
       const model = gltf.scene;
 
