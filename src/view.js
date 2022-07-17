@@ -598,6 +598,12 @@ export default class View {
 
     const newMorphStep = clamp(morphStep + factor * deltaTime * speed * 0.01, 0, 1)
 
+    if (newMorphStep === 1) {
+      this.model.set({ morph: "backwards" })
+    } else if (newMorphStep === 0) {
+      this.model.set({ morph: "forwards" })
+    }
+
     if (!pause) {
       this.model.set({ morphStep: newMorphStep })
 
