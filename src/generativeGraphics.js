@@ -9,7 +9,7 @@ export default class GenerativeGraphics {
     this.model = new Model(presets.remembered[preset][0])
     this.view = new View(this.model)
 
-    if (debug === "true") {
+    if (debug) {
       const gui = new Gui(preset, this.model)
       gui.subscribeToModel()
       this.view.showStats()
