@@ -75,8 +75,7 @@ export default class View {
                 uMorph: { type: "i", value: 0 },
                 uMorphStep: { type: "f", value: this.morphStep },
                 uNoiseTexture: { type: "t" },
-                // uColorTexture: { type: "t" },
-                // uOpacity: { type: "f", value: attributes.opacity },
+                uColorTexture: { type: "t" },
                 // uAmbientLight: {
                 //   type: "v3", value: new Vector3(r, g, b)
                 // },
@@ -84,12 +83,9 @@ export default class View {
               }
             ])
 
-            console.log(shader.vertexShader)
-
             shader.vertexShader = vertexShader
           
             o.material.userData.shader = shader;
-            console.log(shader.fragmentShader)
           }
 
           o.material.side = DoubleSide
@@ -100,6 +96,7 @@ export default class View {
           o.material.depthTest = attributes.depthTest
           o.material.lights = true
           o.material.derivatives = true
+          o.material.opacity = attributes.opacity
 
           // o.material = this.shaderMaterial
         }
@@ -282,7 +279,7 @@ export default class View {
     this.model.on("change:opacity", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.userData.shader.uniforms.uOpacity.value = value
+          o.material.opacity = value
         }
       })
     })
@@ -508,7 +505,7 @@ export default class View {
           uMorphStep: { type: "f", value: this.morphStep },
           uNoiseTexture: { type: "t" },
           uColorTexture: { type: "t" },
-          uOpacity: { type: "f", value: attributes.opacity },
+          // uOpacity: { type: "f", value: attributes.opacity },
           uAmbientLight: {
             type: "v3", value: new Vector3(r, g, b)
           },
