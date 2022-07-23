@@ -52,7 +52,7 @@ export default class View {
     dracoLoader.setDecoderPath( 'draco/' );
     gltfLoader.setDRACOLoader( dracoLoader );
 
-    const gltf = await gltfLoader.loadAsync('model(14).gltf')
+    const gltf = await gltfLoader.loadAsync('model.gltf')
     
     const model = gltf.scene
     model.position.y = -0.3
