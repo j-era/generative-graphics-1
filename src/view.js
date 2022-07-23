@@ -358,7 +358,7 @@ export default class View {
 
     const renderer = new WebGLRenderer({
       preserveDrawingBuffer,
-      antialias: true,
+      antialias: false,
       alpha: true
     })
 
@@ -372,7 +372,7 @@ export default class View {
     renderer.getContext().getExtension("OES_standard_derivatives")
     renderer.setClearColor(0xffffff, 1)
     renderer.setSize(window.innerWidth, window.innerHeight)
-    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.setPixelRatio(2)
 
     return renderer
   }
