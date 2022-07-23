@@ -45,74 +45,74 @@ export default class View {
     window.addEventListener("resize", this.onWindowResize.bind(this), false)
   }
 
-  init() {
+  async init() {
     const gltfLoader = new GLTFLoader().setPath("/");
 
     const dracoLoader = new DRACOLoader();
     dracoLoader.setDecoderPath( 'draco/' );
     gltfLoader.setDRACOLoader( dracoLoader );
 
-    gltfLoader.load('model.gltf', function (gltf) {
-      const model = gltf.scene;
-      model.position.y = -0.3
+    const gltf = await gltfLoader.loadAsync('model(14).gltf')
+    
+    const model = gltf.scene
+    model.position.y = -0.3
 
-      model.scale.x = 0.005
-      model.scale.y = 0.005
-      model.scale.z = 0.005
+    model.scale.x = 0.005
+    model.scale.y = 0.005
+    model.scale.z = 0.005
 
-      const attributes = this.model.attributes
-      const { r, g, b } = this.getColor(attributes.ambientLight)
+    const attributes = this.model.attributes
+    const { r, g, b } = this.getColor(attributes.ambientLight)
 
-      model.traverse((o) => {
-        if (o.isMesh) {
-          o.material.onBeforeCompile = function (shader) {
-            shader.uniforms = UniformsUtils.merge([
-              shader.uniforms,
-              // UniformsLib.lights, // ?
-              {
-                uStep: { type: "f", value: this.step },
-                uScale: { type: "f", value: attributes.scale },
-                uMorph: { type: "i", value: 0 },
-                uMorphStep: { type: "f", value: this.morphStep },
-                uNoiseTexture: { type: "t" },
-                uColorTexture: { type: "t" },
-                // uAmbientLight: {
-                //   type: "v3", value: new Vector3(r, g, b)
-                // },
-                uPointSize: { type: "f", value: attributes.pointSize }
-              }
-            ])
+    model.traverse((o) => {
+      if (o.isMesh) {
+        o.material.onBeforeCompile = function (shader) {
+          shader.uniforms = UniformsUtils.merge([
+            shader.uniforms,
+            // UniformsLib.lights, // ?
+            {
+              uStep: { type: "f", value: this.step },
+              uScale: { type: "f", value: attributes.scale },
+              uMorph: { type: "i", value: 0 },
+              uMorphStep: { type: "f", value: this.morphStep },
+              uNoiseTexture: { type: "t" },
+              uColorTexture: { type: "t" },
+              // uAmbientLight: {
+              //   type: "v3", value: new Vector3(r, g, b)
+              // },
+              uPointSize: { type: "f", value: attributes.pointSize }
+            }
+          ])
 
-            shader.vertexShader = vertexShader
-          
-            o.material.userData.shader = shader;
-          }
-
-          o.material.side = DoubleSide
-          o.material.transparent = true
-          o.material.blending = THREE[attributes.blending]
-          o.material.wireframe = attributes.wireframe
-          o.material.wireframeLinewidth = attributes.lineWidth
-          o.material.depthTest = attributes.depthTest
-          o.material.lights = true
-          o.material.derivatives = true
-          o.material.opacity = attributes.opacity
-
-          // o.material = this.shaderMaterial
+          shader.vertexShader = vertexShader
+        
+          o.material.userData.shader = shader;
         }
-      })
 
-      this.object3D = model.children[0]
+        o.material.side = DoubleSide
+        o.material.transparent = true
+        o.material.blending = THREE[attributes.blending]
+        o.material.wireframe = attributes.wireframe
+        o.material.wireframeLinewidth = attributes.lineWidth
+        o.material.depthTest = attributes.depthTest
+        o.material.lights = true
+        o.material.derivatives = true
+        o.material.opacity = attributes.opacity
 
-      this.scene.add(this.object3D)
+        // o.material = this.shaderMaterial
+      }
+    })
 
-      this.modelLoaded = true
+    this.object3D = model.children[0]
 
-      this.loadNoiseTexture()
-      this.loadColorTexture()
+    this.scene.add(this.object3D)
 
-      this.render()
-    }.bind(this));
+    this.modelLoaded = true
+
+    this.loadNoiseTexture()
+    this.loadColorTexture()
+
+    this.render()
   }
 
   subscribeToModel() {

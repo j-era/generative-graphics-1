@@ -16,7 +16,11 @@ export default class GenerativeGraphics {
     }
   }
 
-  start() {
-    this.view.init()
+  async start() {
+    await this.view.init()
+  }
+
+  getModel() {
+    return this.model
   }
 }
