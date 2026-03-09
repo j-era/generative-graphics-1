@@ -6,19 +6,20 @@ import fragmentShader from "./shader/fragmentShader.glsl"
 import vertexShader from "./shader/vertexShader.glsl"
 
 import * as THREE from "three"
-import { BoxGeometry, Camera, Clock, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry, PointLight, Points, RepeatWrapping, Scene, ShaderMaterial, SphereGeometry, TextureLoader, TorusKnotGeometry, UniformsLib, UniformsUtils, Vector3, WebGLRenderer } from "three"
+import { BoxGeometry, Camera, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry, PointLight, Points, RepeatWrapping, Scene, ShaderMaterial, SphereGeometry, TextureLoader, Timer, TorusKnotGeometry, UniformsLib, UniformsUtils, Vector3, WebGLRenderer } from "three"
 import defaultBackgroundImage from "../assets/textures/background/default-background.jpg"
 import defaultNoiseImage from "../assets/textures/noise/default-noise-texture.png"
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
-import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
 
 export default class View {
   constructor(model) {
     this.model = model
+    this.onResize = this.onWindowResize.bind(this)
+    this.animationFrameId = null
 
     this.subscribeToModel()
 
-    this.clock = new Clock(false)
+    this.clock = new Timer()
+    this.clock.connect(document)
     this.step = 0.0
 
     this.updateRenderer()
@@ -30,8 +31,6 @@ export default class View {
       this.scene.add(this.lights[light])
     }
 
-    // this.shaderMaterial = this.createShaderMaterial()
-
     this.backgroundScene = new Scene()
     this.backgroundCamera = new Camera()
     this.backgroundPlane = this.createBackgroundPlane()
@@ -42,72 +41,15 @@ export default class View {
     this.stats.setMode(1)
     this.statsVisible = false
 
-    window.addEventListener("resize", this.onWindowResize.bind(this), false)
+    window.addEventListener("resize", this.onResize, false)
   }
 
   async init() {
-    const gltfLoader = new GLTFLoader().setPath("/");
-
-    const dracoLoader = new DRACOLoader();
-    dracoLoader.setDecoderPath( 'draco/' );
-    gltfLoader.setDRACOLoader( dracoLoader );
-
-    const gltf = await gltfLoader.loadAsync('model.gltf')
-    
-    const model = gltf.scene
-    model.position.y = -0.3
-
-    model.scale.x = 0.005
-    model.scale.y = 0.005
-    model.scale.z = 0.005
-
-    const attributes = this.model.attributes
-    const { r, g, b } = this.getColor(attributes.ambientLight)
-
-    model.traverse((o) => {
-      if (o.isMesh) {
-        o.material.onBeforeCompile = function (shader) {
-          shader.uniforms = UniformsUtils.merge([
-            shader.uniforms,
-            // UniformsLib.lights, // ?
-            {
-              uStep: { type: "f", value: this.step },
-              uScale: { type: "f", value: attributes.scale },
-              uMorph: { type: "i", value: 0 },
-              uMorphStep: { type: "f", value: this.morphStep },
-              uNoiseTexture: { type: "t" },
-              uColorTexture: { type: "t" },
-              // uAmbientLight: {
-              //   type: "v3", value: new Vector3(r, g, b)
-              // },
-              uPointSize: { type: "f", value: attributes.pointSize }
-            }
-          ])
-
-          shader.vertexShader = vertexShader
-        
-          o.material.userData.shader = shader;
-        }
-
-        o.material.side = DoubleSide
-        o.material.transparent = true
-        o.material.blending = THREE[attributes.blending]
-        o.material.wireframe = attributes.wireframe
-        o.material.wireframeLinewidth = attributes.lineWidth
-        o.material.depthTest = attributes.depthTest
-        o.material.lights = true
-        o.material.derivatives = true
-        o.material.opacity = attributes.opacity
-
-        // o.material = this.shaderMaterial
-      }
-    })
-
-    this.object3D = model.children[0]
+    const geometry = this.createGeometry()
+    const shaderMaterial = this.createShaderMaterial()
+    this.object3D = this.createObject3D(geometry, shaderMaterial)
 
     this.scene.add(this.object3D)
-
-    this.modelLoaded = true
 
     this.loadNoiseTexture()
     this.loadColorTexture()
@@ -141,7 +83,10 @@ export default class View {
     this.model.on("change:scale", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.userData.shader.uniforms.uScale.value = value
+          const uniforms = o.material.uniforms
+          if (uniforms && uniforms.uScale) {
+            uniforms.uScale.value = value
+          }
         }
       })
     })
@@ -167,7 +112,10 @@ export default class View {
 
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.userData.shader.uniforms.uAmbientLight.value = new Vector3(r, g, b)
+          const uniforms = o.material.uniforms
+          if (uniforms && uniforms.uAmbientLight) {
+            uniforms.uAmbientLight.value = new Vector3(r, g, b)
+          }
         }
       })
     })
@@ -225,7 +173,12 @@ export default class View {
     this.model.on("change:morph", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uMorph = o.material.userData.shader.uniforms.uMorph
+          const uniforms = o.material.uniforms
+          if (!uniforms || !uniforms.uMorph) {
+            return
+          }
+
+          const uMorph = uniforms.uMorph
 
           if (value === "off") {
             uMorph.value = 0
@@ -279,6 +232,11 @@ export default class View {
     this.model.on("change:opacity", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
+          const uniforms = o.material.uniforms
+          if (uniforms && uniforms.uOpacity) {
+            uniforms.uOpacity.value = value
+          }
+
           o.material.opacity = value
         }
       })
@@ -296,7 +254,10 @@ export default class View {
     this.model.on("change:pointSize", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.userData.shader.uniforms.uPointSize.value = value
+          const uniforms = o.material.uniforms
+          if (uniforms && uniforms.uPointSize) {
+            uniforms.uPointSize.value = value
+          }
         }
       })
     })
@@ -396,7 +357,10 @@ export default class View {
 
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          o.material.userData.shader.uniforms[uniformName].value = texture
+          const uniforms = o.material.uniforms
+          if (uniforms && uniforms[uniformName]) {
+            uniforms[uniformName].value = texture
+          }
         }
       })
     })
@@ -493,7 +457,6 @@ export default class View {
       wireframeLinewidth: attributes.lineWidth,
       depthTest: attributes.depthTest,
       lights: true,
-      derivatives: true,
       vertexShader,
       fragmentShader,
       uniforms: UniformsUtils.merge([
@@ -505,7 +468,7 @@ export default class View {
           uMorphStep: { type: "f", value: this.morphStep },
           uNoiseTexture: { type: "t" },
           uColorTexture: { type: "t" },
-          // uOpacity: { type: "f", value: attributes.opacity },
+          uOpacity: { type: "f", value: attributes.opacity },
           uAmbientLight: {
             type: "v3", value: new Vector3(r, g, b)
           },
@@ -549,7 +512,6 @@ export default class View {
   }
 
   render() {
-    this.clock.start()
     this.animate()
   }
 
@@ -558,8 +520,9 @@ export default class View {
       this.stats.update()
     }
 
-    requestAnimationFrame(this.animate.bind(this))
+    this.animationFrameId = requestAnimationFrame(this.animate.bind(this))
 
+    this.clock.update()
     const deltaTime = this.clock.getDelta()
 
     this.updateStep(deltaTime)
@@ -570,6 +533,33 @@ export default class View {
     this.renderer.render(this.scene, this.camera)
   }
 
+  dispose() {
+    if (this.animationFrameId !== null) {
+      cancelAnimationFrame(this.animationFrameId)
+      this.animationFrameId = null
+    }
+
+    window.removeEventListener("resize", this.onResize, false)
+
+    if (this.mouseControls) {
+      this.mouseControls.removeEventHandlers()
+      this.mouseControls = null
+    }
+
+    if (this.clock) {
+      this.clock.dispose()
+    }
+
+    if (this.renderer && this.renderer.domElement && this.renderer.domElement.parentNode) {
+      this.renderer.domElement.parentNode.removeChild(this.renderer.domElement)
+    }
+
+    if (this.renderer) {
+      this.renderer.dispose()
+      this.renderer = null
+    }
+  }
+
   updateStep(deltaTime) {
     const { pause, speed } = this.model.attributes
 
@@ -578,9 +568,9 @@ export default class View {
         if (!pause) {
           this.step += deltaTime * speed * 0.01
 
-          const shader = o.material.userData.shader;
-          if (shader) {
-            shader.uniforms.uStep.value = this.step
+          const uniforms = o.material.uniforms
+          if (uniforms && uniforms.uStep) {
+            uniforms.uStep.value = this.step
           }
         }
       }
@@ -610,9 +600,9 @@ export default class View {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
           if (!pause) {
-            const shader = o.material.userData.shader;
-            if (shader) {
-              shader.uniforms.uMorphStep.value = newMorphStep
+            const uniforms = o.material.uniforms
+            if (uniforms && uniforms.uMorphStep) {
+              uniforms.uMorphStep.value = newMorphStep
             }
           }
         }

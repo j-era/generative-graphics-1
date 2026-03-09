@@ -8,11 +8,10 @@ uniform sampler2D uNoiseTexture;
 uniform float uPointSize;
 
 varying vec2 vLookupUv;
-varying vec3 vViewPosition;
+varying vec4 vModelViewPosition;
 
 #include <common>
 #include <uv_pars_vertex>
-#include <uv2_pars_vertex>
 #include <displacementmap_pars_vertex>
 #include <color_pars_vertex>
 #include <fog_pars_vertex>
@@ -41,9 +40,9 @@ void main() {
       uMorphStep
   );
 
-  vViewPosition = (modelViewMatrix * vec4(texPosition.xyz, 1.0)).xyz;
+  vModelViewPosition = modelViewMatrix * vec4(texPosition.xyz, 1.0);
 
 
   gl_PointSize = uPointSize;
-  gl_Position = projectionMatrix * vec4(vViewPosition,1.0);
+  gl_Position = projectionMatrix * vModelViewPosition;
 }
