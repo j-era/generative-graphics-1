@@ -7,6 +7,8 @@ import vertexShader from "./shader/vertexShader.glsl"
 
 import * as THREE from "three"
 import { BoxGeometry, Camera, Color, DirectionalLight, DoubleSide, Mesh, MeshBasicMaterial, PerspectiveCamera, PlaneGeometry, PointLight, Points, RepeatWrapping, Scene, ShaderMaterial, SphereGeometry, TextureLoader, Timer, TorusKnotGeometry, UniformsLib, UniformsUtils, Vector3, WebGLRenderer } from "three"
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader"
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader"
 import defaultBackgroundImage from "../assets/textures/background/default-background.jpg"
 import defaultNoiseImage from "../assets/textures/noise/default-noise-texture.png"
 
@@ -45,9 +47,62 @@ export default class View {
   }
 
   async init() {
-    const geometry = this.createGeometry()
-    const shaderMaterial = this.createShaderMaterial()
-    this.object3D = this.createObject3D(geometry, shaderMaterial)
+    const gltfLoader = new GLTFLoader().setPath("/")
+
+    const dracoLoader = new DRACOLoader()
+    dracoLoader.setDecoderPath("draco/gltf/")
+    dracoLoader.setDecoderConfig({ type: "js" })
+    dracoLoader.preload()
+    gltfLoader.setDRACOLoader(dracoLoader)
+
+    const gltf = await gltfLoader.loadAsync("witch.gltf")
+
+    const model = gltf.scene
+    model.position.y = -0.3
+
+    model.scale.x = 0.005
+    model.scale.y = 0.005
+    model.scale.z = 0.005
+
+    const attributes = this.model.attributes
+    const { r, g, b } = this.getColor(attributes.ambientLight)
+
+    model.traverse((o) => {
+      if (o.isMesh) {
+        o.material.onBeforeCompile = (shader) => {
+          shader.uniforms = UniformsUtils.merge([
+            shader.uniforms,
+            {
+              uStep: { type: "f", value: this.step },
+              uScale: { type: "f", value: attributes.scale },
+              uMorph: { type: "i", value: 0 },
+              uMorphStep: { type: "f", value: this.morphStep },
+              uNoiseTexture: { type: "t" },
+              uColorTexture: { type: "t" },
+              uOpacity: { type: "f", value: attributes.opacity },
+              uAmbientLight: {
+                type: "v3", value: new Vector3(r, g, b)
+              },
+              uPointSize: { type: "f", value: attributes.pointSize }
+            }
+          ])
+
+          o.material.uniforms = shader.uniforms
+        }
+
+        o.material.side = DoubleSide
+        o.material.transparent = true
+        o.material.blending = THREE[attributes.blending]
+        o.material.wireframe = attributes.wireframe
+        o.material.wireframeLinewidth = attributes.lineWidth
+        o.material.depthTest = attributes.depthTest
+        o.material.lights = true
+        o.material.derivatives = true
+        o.material.opacity = attributes.opacity
+      }
+    })
+
+    this.object3D = model.children[0]
 
     this.scene.add(this.object3D)
 
@@ -310,7 +365,9 @@ export default class View {
     }
 
     this.mouseControls = new MouseControls(this.renderer.domElement, (deltaQuaternion) => {
-      this.object3D.quaternion.multiplyQuaternions(deltaQuaternion, this.object3D.quaternion)
+      if (this.object3D) {
+        this.object3D.quaternion.multiplyQuaternions(deltaQuaternion, this.object3D.quaternion)
+      }
     })
   }
 
