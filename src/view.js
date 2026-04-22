@@ -55,7 +55,7 @@ export default class View {
     dracoLoader.preload()
     gltfLoader.setDRACOLoader(dracoLoader)
 
-    const gltf = await gltfLoader.loadAsync("model.gltf")
+    const gltf = await gltfLoader.loadAsync("headphones.gltf")
 
     const model = gltf.scene
     model.position.y = -0.3
