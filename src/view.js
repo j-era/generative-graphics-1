@@ -69,26 +69,17 @@ export default class View {
 
     model.traverse((o) => {
       if (o.isMesh) {
-        o.material.onBeforeCompile = (shader) => {
-          shader.uniforms = UniformsUtils.merge([
-            shader.uniforms,
-            {
-              uStep: { type: "f", value: this.step },
-              uScale: { type: "f", value: attributes.scale },
-              uMorph: { type: "i", value: 0 },
-              uMorphStep: { type: "f", value: this.morphStep },
-              uNoiseTexture: { type: "t" },
-              uColorTexture: { type: "t" },
-              uOpacity: { type: "f", value: attributes.opacity },
-              uAmbientLight: {
-                type: "v3", value: new Vector3(r, g, b)
-              },
-              uPointSize: { type: "f", value: attributes.pointSize }
-            }
-          ])
+        const customUniforms = this.createCustomUniforms(attributes, { r, g, b })
 
-          o.material.uniforms = shader.uniforms
+        o.material.userData.customUniforms = customUniforms
+        o.material.onBeforeCompile = (shader) => {
+          Object.assign(shader.uniforms, customUniforms)
+          shader.vertexShader = vertexShader
+          shader.fragmentShader = fragmentShader
+          o.material.userData.shader = shader
         }
+
+        o.material.customProgramCacheKey = () => "generative-graphics-custom-shader"
 
         o.material.side = DoubleSide
         o.material.transparent = true
@@ -99,6 +90,7 @@ export default class View {
         o.material.lights = true
         o.material.derivatives = true
         o.material.opacity = attributes.opacity
+        o.material.needsUpdate = true
       }
     })
 
@@ -138,7 +130,7 @@ export default class View {
     this.model.on("change:scale", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (uniforms && uniforms.uScale) {
             uniforms.uScale.value = value
           }
@@ -167,7 +159,7 @@ export default class View {
 
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (uniforms && uniforms.uAmbientLight) {
             uniforms.uAmbientLight.value = new Vector3(r, g, b)
           }
@@ -228,7 +220,7 @@ export default class View {
     this.model.on("change:morph", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (!uniforms || !uniforms.uMorph) {
             return
           }
@@ -287,7 +279,7 @@ export default class View {
     this.model.on("change:opacity", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (uniforms && uniforms.uOpacity) {
             uniforms.uOpacity.value = value
           }
@@ -309,7 +301,7 @@ export default class View {
     this.model.on("change:pointSize", (model, value) => {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (uniforms && uniforms.uPointSize) {
             uniforms.uPointSize.value = value
           }
@@ -414,7 +406,7 @@ export default class View {
 
       this.object3D.traverse((o) => {
         if (o.isMesh) {
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (uniforms && uniforms[uniformName]) {
             uniforms[uniformName].value = texture
           }
@@ -502,6 +494,26 @@ export default class View {
     }
   }
 
+  createCustomUniforms(attributes, ambientLightColor) {
+    return {
+      uStep: { type: "f", value: this.step },
+      uScale: { type: "f", value: attributes.scale },
+      uMorph: { type: "i", value: 0 },
+      uMorphStep: { type: "f", value: attributes.morphStep },
+      uNoiseTexture: { type: "t" },
+      uColorTexture: { type: "t" },
+      uOpacity: { type: "f", value: attributes.opacity },
+      uAmbientLight: {
+        type: "v3", value: new Vector3(ambientLightColor.r, ambientLightColor.g, ambientLightColor.b)
+      },
+      uPointSize: { type: "f", value: attributes.pointSize }
+    }
+  }
+
+  getMaterialUniforms(material) {
+    return material.userData.shader?.uniforms || material.userData.customUniforms || material.uniforms
+  }
+
   createShaderMaterial() {
     const attributes = this.model.attributes
     const { r, g, b } = this.getColor(attributes.ambientLight)
@@ -518,19 +530,7 @@ export default class View {
       fragmentShader,
       uniforms: UniformsUtils.merge([
         UniformsLib.lights,
-        {
-          uStep: { type: "f", value: this.step },
-          uScale: { type: "f", value: attributes.scale },
-          uMorph: { type: "i", value: 0 },
-          uMorphStep: { type: "f", value: this.morphStep },
-          uNoiseTexture: { type: "t" },
-          uColorTexture: { type: "t" },
-          uOpacity: { type: "f", value: attributes.opacity },
-          uAmbientLight: {
-            type: "v3", value: new Vector3(r, g, b)
-          },
-          uPointSize: { type: "f", value: attributes.pointSize }
-        }
+        this.createCustomUniforms(attributes, { r, g, b })
       ])
     })
   }
@@ -625,7 +625,7 @@ export default class View {
         if (!pause) {
           this.step += deltaTime * speed * 0.01
 
-          const uniforms = o.material.uniforms
+          const uniforms = this.getMaterialUniforms(o.material)
           if (uniforms && uniforms.uStep) {
             uniforms.uStep.value = this.step
           }
@@ -657,7 +657,7 @@ export default class View {
       this.object3D.traverse((o) => {
         if (o.isMesh) {
           if (!pause) {
-            const uniforms = o.material.uniforms
+            const uniforms = this.getMaterialUniforms(o.material)
             if (uniforms && uniforms.uMorphStep) {
               uniforms.uMorphStep.value = newMorphStep
             }
