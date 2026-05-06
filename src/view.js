@@ -98,8 +98,10 @@ export default class View {
 
     this.scene.add(this.object3D)
 
-    this.loadNoiseTexture()
+    await Promise.all([
+      this.loadNoiseTexture(),
     this.loadColorTexture()
+    ])
 
     this.render()
   }
@@ -388,7 +390,7 @@ export default class View {
   }
 
   loadNoiseTexture() {
-    this.loadTexture(defaultNoiseImage, "uNoiseTexture")
+    return this.loadTexture(defaultNoiseImage, "uNoiseTexture")
   }
 
   loadColorTexture() {
@@ -397,11 +399,14 @@ export default class View {
     const path = colorTexture === "None" ? defaultNoiseImage :
       `textures/${colorTexture}`
 
-    this.loadTexture(path, "uColorTexture")
+    return this.loadTexture(path, "uColorTexture")
   }
 
   loadTexture(filePath, uniformName) {
-    new TextureLoader().load(filePath, (texture) => {
+    return new Promise((resolve, reject) => {
+      new TextureLoader().load(
+        filePath,
+        (texture) => {
       texture.wrapT = texture.wrapS = RepeatWrapping
 
       this.object3D.traverse((o) => {
@@ -412,6 +417,12 @@ export default class View {
           }
         }
       })
+
+          resolve(texture)
+        },
+        undefined,
+        reject
+      )
     })
   }
 
