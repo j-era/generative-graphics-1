@@ -50,7 +50,7 @@ export default class View {
     const gltfLoader = new GLTFLoader().setPath("/")
 
     const dracoLoader = new DRACOLoader()
-    dracoLoader.setDecoderPath("draco/gltf/")
+    dracoLoader.setDecoderPath("/draco/gltf/")
     dracoLoader.setDecoderConfig({ type: "js" })
     dracoLoader.preload()
     gltfLoader.setDRACOLoader(dracoLoader)
