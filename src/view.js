@@ -396,8 +396,11 @@ export default class View {
   loadColorTexture() {
     const { colorTexture } = this.model.attributes
 
-    const path = colorTexture === "None" ? defaultNoiseImage :
-      `textures/${colorTexture}`
+    if (colorTexture === "None") {
+      return Promise.resolve(null)
+    }
+
+    const path = `textures/${colorTexture}`
 
     return this.loadTexture(path, "uColorTexture")
   }
