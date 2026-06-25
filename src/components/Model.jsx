@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useRef } from "react"
 import { useFrame } from "@react-three/fiber"
-import { useGLTF, useTexture } from "@react-three/drei"
+import { useGLTF } from "@react-three/drei"
 import {
   BoxGeometry,
   PlaneGeometry,
   Quaternion,
-  RepeatWrapping,
   SphereGeometry,
   TorusKnotGeometry,
   Vector3,
@@ -16,9 +15,6 @@ import useStore from "../store"
 import { createGenerativeMaterial, toColor } from "../materials/generativeMaterial"
 import useDragRotate from "../hooks/useDragRotate"
 import usePointerTracker from "../hooks/usePointerTracker"
-
-import defaultNoiseUrl from "../../assets/textures/noise/default-noise-texture.png"
-import defaultColorUrl from "../../assets/textures/color/default-color-texture.png"
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
@@ -94,30 +90,18 @@ export default function Model() {
 
   const object3d = useStore((s) => s.object3d)
 
-  // --- Textures -------------------------------------------------------------
-  const noiseTexture = useTexture(defaultNoiseUrl)
-  const colorTexture = useTexture(defaultColorUrl)
-  const colorTextureName = useStore((s) => s.colorTexture)
-
-  useEffect(() => {
-    noiseTexture.wrapS = noiseTexture.wrapT = RepeatWrapping
-    material.uniforms.uNoiseTexture.value = noiseTexture
-  }, [noiseTexture, material])
-
-  useEffect(() => {
-    if (colorTextureName === "None") {
-      material.uniforms.uColorTexture.value = null
-    } else {
-      colorTexture.wrapS = colorTexture.wrapT = RepeatWrapping
-      material.uniforms.uColorTexture.value = colorTexture
-    }
-  }, [colorTextureName, colorTexture, material])
-
   // --- Reactive uniform / material updates ----------------------------------
   const scale = useStore((s) => s.scale)
   const opacity = useStore((s) => s.opacity)
   const pointSize = useStore((s) => s.pointSize)
   const ambientLight = useStore((s) => s.ambientLight)
+  const color = useStore((s) => s.color)
+  const noiseFrequency = useStore((s) => s.noiseFrequency)
+  const noiseAmplitude = useStore((s) => s.noiseAmplitude)
+  const noiseScroll = useStore((s) => s.noiseScroll)
+  const noiseTimeScale = useStore((s) => s.noiseTimeScale)
+  const noiseDetail = useStore((s) => s.noiseDetail)
+  const noiseRoughness = useStore((s) => s.noiseRoughness)
   const wireframe = useStore((s) => s.wireframe)
   const depthTest = useStore((s) => s.depthTest)
   const blending = useStore((s) => s.blending)
@@ -140,6 +124,35 @@ export default function Model() {
     const { r, g, b } = toColor(ambientLight)
     material.uniforms.uAmbientLight.value = new Vector3(r, g, b)
   }, [ambientLight, material])
+
+  useEffect(() => {
+    const { r, g, b } = toColor(color)
+    material.uniforms.uColor.value.set(r, g, b)
+  }, [color, material])
+
+  useEffect(() => {
+    material.uniforms.uNoiseFrequency.value = noiseFrequency
+  }, [noiseFrequency, material])
+
+  useEffect(() => {
+    material.uniforms.uNoiseAmplitude.value = noiseAmplitude
+  }, [noiseAmplitude, material])
+
+  useEffect(() => {
+    material.uniforms.uNoiseScroll.value = noiseScroll
+  }, [noiseScroll, material])
+
+  useEffect(() => {
+    material.uniforms.uNoiseTimeScale.value = noiseTimeScale
+  }, [noiseTimeScale, material])
+
+  useEffect(() => {
+    material.uniforms.uNoiseDetail.value = noiseDetail
+  }, [noiseDetail, material])
+
+  useEffect(() => {
+    material.uniforms.uNoiseRoughness.value = noiseRoughness
+  }, [noiseRoughness, material])
 
   useEffect(() => {
     material.wireframe = wireframe

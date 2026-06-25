@@ -31,14 +31,20 @@ export function toColor(value) {
  */
 export function createCustomUniforms(state) {
   const ambient = toColor(state.ambientLight)
+  const color = toColor(state.color)
 
   return {
     uStep: { value: 0.0 },
     uScale: { value: state.scale },
     uMorph: { value: 0 },
     uMorphStep: { value: state.morphStep },
-    uNoiseTexture: { value: null },
-    uColorTexture: { value: null },
+    uNoiseFrequency: { value: state.noiseFrequency },
+    uNoiseAmplitude: { value: state.noiseAmplitude },
+    uNoiseScroll: { value: state.noiseScroll },
+    uNoiseTimeScale: { value: state.noiseTimeScale },
+    uNoiseDetail: { value: state.noiseDetail },
+    uNoiseRoughness: { value: state.noiseRoughness },
+    uColor: { value: new Vector3(color.r, color.g, color.b) },
     uOpacity: { value: state.opacity },
     uAmbientLight: { value: new Vector3(ambient.r, ambient.g, ambient.b) },
     uPointSize: { value: state.pointSize },

@@ -1,9 +1,6 @@
 import { create } from "zustand"
 import presets from "./presets.json"
 
-export const noiseTextures = ["default"]
-export const colorTextures = ["None", "default"]
-export const backgroundTextures = ["None", "default"]
 export const morph = ["off", "forwards", "backwards"]
 export const objects3d = ["THREE.Mesh", "THREE.Points"]
 export const geometries = [
@@ -21,9 +18,6 @@ export const blendingFunctions = [
 ]
 
 const defaults = {
-  noiseTexture: noiseTextures[0],
-  colorTexture: colorTextures[0],
-  backgroundTexture: backgroundTextures[0],
   geometry: geometries[0],
   object3d: objects3d[0],
   pointSize: 1.0,
@@ -31,6 +25,12 @@ const defaults = {
   segmentsX: 256,
   segmentsY: 256,
   scale: 0.2,
+  noiseFrequency: 3.0,
+  noiseAmplitude: 0.5,
+  noiseScroll: 1.0,
+  noiseTimeScale: 0.1,
+  noiseDetail: 2.5,
+  noiseRoughness: 0.5,
   rotationSpeedX: 0.01,
   rotationSpeedY: 0.01,
   rotationSpeedZ: 0,
@@ -40,7 +40,9 @@ const defaults = {
   pause: false,
   morph: morph[0],
   morphStep: 0.0,
-  background: [255, 255, 255],
+  color: [0, 0, 0],
+  background: [255, 250, 235],
+  backgroundColorB: [250, 216, 150],
   blending: blendingFunctions[0],
   opacity: 0.1,
   pointLight1: true,

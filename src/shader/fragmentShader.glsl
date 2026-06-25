@@ -1,7 +1,6 @@
-uniform sampler2D uColorTexture;
-
 uniform float uOpacity; // [0.0..1.0]
 uniform vec3 uAmbientLight;
+uniform vec3 uColor; // base albedo (replaces the old colour texture)
 
 varying vec2 vLookupUv;
 varying vec4 vModelViewPosition;
@@ -14,8 +13,6 @@ varying vec4 vModelViewPosition;
 #include <lights_pars_begin>
 
 void main() {
-  vec4 tex = texture2D(uColorTexture, vLookupUv);
-
   // Custom ambient term (driven by the `ambientLight` store control) combined
   // with the scene's standard ambient contribution.
   vec4 addedLights = vec4(uAmbientLight.xyz + ambientLightColor, 1.0);
@@ -39,5 +36,5 @@ void main() {
     }
   #endif
 
-  gl_FragColor = vec4(tex.rgb, uOpacity) * addedLights;
+  gl_FragColor = vec4(uColor, uOpacity) * addedLights;
 }

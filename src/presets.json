@@ -12,8 +12,8 @@
         "planeOpacity": 0.17753552234573763,
         "background": [
           255,
-          255,
-          255
+          250,
+          235
         ],
         "backgroundTexture": "default",
         "scale": 0.5507104469147526,
