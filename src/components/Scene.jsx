@@ -31,6 +31,9 @@ export default function Scene() {
   // buffer is never cleared, so frames accumulate into motion trails; only
   // depth/stencil are cleared before each pass.
   useFrame((state) => {
+    // Skip the GPU work entirely when the tab is backgrounded.
+    if (typeof document !== "undefined" && document.hidden) return
+
     const { gl, scene, camera: mainCamera } = state
     gl.autoClear = false
     gl.clear(false, true, true)

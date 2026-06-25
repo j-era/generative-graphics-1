@@ -1,11 +1,13 @@
-import { Suspense, useEffect } from "react"
+import { Suspense, lazy, useEffect } from "react"
 import { Canvas } from "@react-three/fiber"
 import { Stats } from "@react-three/drei"
-import { Leva } from "leva"
 
 import Scene from "./components/Scene"
-import useLevaControls from "./controls"
 import useStore from "./store"
+
+// Leva and the control definitions are only needed in debug mode. Lazy-load
+// them so they are code-split out of the main bundle for normal page loads.
+const DebugPanel = lazy(() => import("./DebugPanel"))
 
 /**
  * Read the `debug` flag from the current URL query string. Guarded for SSR
@@ -34,8 +36,6 @@ export default function GenerativeGraphics({
   style,
   className,
 }) {
-  useLevaControls()
-
   // Push external overrides into the store whenever they change. This lets a
   // host app (e.g. the personal website) drive controls like `wireframe`.
   useEffect(() => {
@@ -49,13 +49,22 @@ export default function GenerativeGraphics({
 
   return (
     <>
-      <Leva hidden={!debug} />
+      {debug && (
+        <Suspense fallback={null}>
+          <DebugPanel />
+        </Suspense>
+      )}
       <Canvas
         key={String(preserveDrawingBuffer)}
-        dpr={2}
+        dpr={[1, 1.5]}
         style={style}
         className={className}
-        gl={{ preserveDrawingBuffer, antialias: false, alpha: true }}
+        gl={{
+          preserveDrawingBuffer,
+          antialias: false,
+          alpha: true,
+          powerPreference: "high-performance",
+        }}
         camera={{ fov: 75, near: 0.01, far: 1000, position: [0, 0, cameraPosZ] }}
         onCreated={({ gl }) => {
           gl.setClearColor(0xffffff, 1)
