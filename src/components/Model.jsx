@@ -4,6 +4,7 @@ import { useGLTF, useTexture } from "@react-three/drei"
 import {
   BoxGeometry,
   PlaneGeometry,
+  Quaternion,
   RepeatWrapping,
   SphereGeometry,
   TorusKnotGeometry,
@@ -32,15 +33,29 @@ export default function Model() {
 
   // --- Geometry -------------------------------------------------------------
   const { scene } = useGLTF("/headphones.gltf", "/draco/gltf/")
-  const modelGeometry = useMemo(() => {
-    let geometry = null
+  const modelMesh = useMemo(() => {
+    let mesh = null
     scene.traverse((o) => {
-      if (o.isMesh && !geometry) {
-        geometry = o.geometry
+      if (o.isMesh && !mesh) {
+        mesh = o
       }
     })
-    return geometry
+    return mesh
   }, [scene])
+  const modelGeometry = modelMesh?.geometry ?? null
+
+  // The original rendered the glTF mesh with its own native transform (the
+  // preset rotation was never applied to it), so capture that here to match the
+  // default orientation.
+  const modelTransform = useMemo(() => {
+    if (!modelMesh) return null
+    scene.updateMatrixWorld(true)
+    const position = new Vector3()
+    const quaternion = new Quaternion()
+    const scale = new Vector3()
+    modelMesh.matrixWorld.decompose(position, quaternion, scale)
+    return { position, quaternion, scale }
+  }, [modelMesh, scene])
 
   const geometryType = useStore((s) => s.geometry)
   const segmentsX = useStore((s) => s.segmentsX)
@@ -148,13 +163,22 @@ export default function Model() {
     material,
   ])
 
-  // Initialise rotation from the stored values once the mesh exists.
+  // Initialise the mesh transform once it exists. The "Model" geometry keeps
+  // the glTF mesh's native orientation; primitives use the preset rotation.
   useEffect(() => {
     const mesh = meshRef.current
     if (!mesh) return
-    const { rotationX = 0, rotationY = 0, rotationZ = 0 } = useStore.getState()
-    mesh.rotation.set(rotationX, rotationY, rotationZ)
-  }, [object3d, geometry])
+    if (geometryType === "Model" && modelTransform) {
+      mesh.position.copy(modelTransform.position)
+      mesh.quaternion.copy(modelTransform.quaternion)
+      mesh.scale.copy(modelTransform.scale)
+    } else {
+      const { rotationX = 0, rotationY = 0, rotationZ = 0 } = useStore.getState()
+      mesh.position.set(0, 0, 0)
+      mesh.scale.set(1, 1, 1)
+      mesh.rotation.set(rotationX, rotationY, rotationZ)
+    }
+  }, [object3d, geometryType, geometry, modelTransform])
 
   useDragRotate(meshRef)
 
