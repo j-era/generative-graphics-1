@@ -24,10 +24,10 @@
           255
         ],
         "directionalLightX": true,
-        "directionalLightY": true,
-        "directionalLightZ": true,
-        "pointLight1": true,
-        "pointLight2": true,
+        "directionalLightY": false,
+        "directionalLightZ": false,
+        "pointLight1": false,
+        "pointLight2": false,
         "morph": "forwards",
         "morphStep": 0.6,
         "segmentsX": 91,
@@ -43,7 +43,7 @@
         "depthTest": false,
         "speed": 0.15,
         "blending": "NormalBlending",
-        "opacity": 0.043,
+        "opacity": 0.02,
         "pause": false,
         "pointSize": 1
       }
