@@ -2,31 +2,52 @@
   "name": "generative-graphics",
   "version": "0.1.0",
   "type": "module",
-  "main": "src/main.jsx",
+  "main": "lib/generative-graphics.js",
+  "module": "lib/generative-graphics.js",
+  "exports": {
+    ".": {
+      "import": "./lib/generative-graphics.js",
+      "default": "./lib/generative-graphics.js"
+    }
+  },
+  "files": [
+    "lib",
+    "public",
+    "src"
+  ],
   "scripts": {
     "dev": "vite",
     "watch": "vite",
     "build": "vite build",
+    "build:lib": "vite build --config vite.lib.config.js",
+    "prepare": "vite build --config vite.lib.config.js",
     "preview": "vite preview",
     "start": "vite preview"
   },
-  "dependencies": {
-    "@react-three/drei": "^9.114.0",
-    "@react-three/fiber": "^8.17.10",
-    "leva": "^0.9.35",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "three": "^0.183.2",
-    "zustand": "^4.5.5"
+  "peerDependencies": {
+    "@react-three/drei": ">=9",
+    "@react-three/fiber": ">=8",
+    "leva": ">=0.9",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "three": ">=0.150",
+    "zustand": ">=4"
   },
   "devDependencies": {
+    "@react-three/drei": "^9.114.0",
+    "@react-three/fiber": "^8.17.10",
     "@rollup/pluginutils": "^5.4.0",
     "@vitejs/plugin-react": "^4.3.2",
     "eslint": "^9.11.1",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.31.0",
+    "leva": "^0.9.35",
     "prettier": "3.3.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.183.2",
     "vite": "^5.4.8",
-    "vite-plugin-glsl": "^1.3.0"
+    "vite-plugin-glsl": "^1.3.0",
+    "zustand": "^4.5.5"
   }
 }
