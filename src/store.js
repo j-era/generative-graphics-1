@@ -44,7 +44,7 @@ const defaults = {
   background: [255, 250, 235],
   backgroundColorB: [250, 216, 150],
   blending: blendingFunctions[0],
-  opacity: 0.1,
+  opacity: 0.02,
   pointLight1: true,
   pointLight2: false,
   directionalLightX: true,
