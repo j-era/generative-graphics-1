@@ -15,17 +15,33 @@ import * as THREE from "three"
 import useStore from "../store"
 import { createGenerativeMaterial, toColor } from "../materials/generativeMaterial"
 import useDragRotate from "../hooks/useDragRotate"
+import usePointerTracker from "../hooks/usePointerTracker"
 
 import defaultNoiseUrl from "../../assets/textures/noise/default-noise-texture.png"
 import defaultColorUrl from "../../assets/textures/color/default-color-texture.png"
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
+// --- Pointer interaction tuning -------------------------------------------
+// Parallax translation of the group, in world units, at the screen edge.
+const PARALLAX_POSITION = 0.15
+// Subtle tilt of the group, in radians, at the screen edge.
+const PARALLAX_TILT = 0.12
+// Extra displacement scale and opacity blended in by pointer distance.
+const SCALE_BOOST = 0.6
+const OPACITY_BOOST = 0.6
+// Damping rates (frame-rate independent via THREE.MathUtils.damp). Higher
+// numbers follow the pointer more eagerly.
+const TRANSFORM_LAMBDA = 3
+const UNIFORM_LAMBDA = 4
+
 export default function Model() {
   const meshRef = useRef()
   const stepRef = useRef(0)
   const morphStepRef = useRef(useStore.getState().morphStep)
   const morphDirRef = useRef(useStore.getState().morph === "backwards" ? -1 : 1)
+  const groupRef = useRef()
+  const pointerRef = usePointerTracker()
 
   // Build the shader material once from the current state snapshot. Reactive
   // updates are applied imperatively through effects below.
@@ -211,6 +227,64 @@ export default function Model() {
       mesh.rotation.y += state.rotationSpeedY * delta
       mesh.rotation.z += state.rotationSpeedZ * delta
     }
+
+    // --- Pointer interaction ------------------------------------------------
+    // Damp a parallax transform on the parent group (leaving the inner mesh's
+    // spin + drag untouched) and ease a few uniforms toward pointer-derived
+    // targets. When interaction is off, everything relaxes back to neutral.
+    const group = groupRef.current
+    const { x: px, y: py } = state.interactive
+      ? pointerRef.current
+      : { x: 0, y: 0 }
+    const distance = Math.min(1, Math.hypot(px, py))
+
+    if (group) {
+      group.position.x = THREE.MathUtils.damp(
+        group.position.x,
+        px * PARALLAX_POSITION,
+        TRANSFORM_LAMBDA,
+        delta,
+      )
+      group.position.y = THREE.MathUtils.damp(
+        group.position.y,
+        py * PARALLAX_POSITION,
+        TRANSFORM_LAMBDA,
+        delta,
+      )
+      group.rotation.y = THREE.MathUtils.damp(
+        group.rotation.y,
+        px * PARALLAX_TILT,
+        TRANSFORM_LAMBDA,
+        delta,
+      )
+      group.rotation.x = THREE.MathUtils.damp(
+        group.rotation.x,
+        -py * PARALLAX_TILT,
+        TRANSFORM_LAMBDA,
+        delta,
+      )
+    }
+
+    const scaleTarget = state.scale * (1 + distance * SCALE_BOOST)
+    material.uniforms.uScale.value = THREE.MathUtils.damp(
+      material.uniforms.uScale.value,
+      scaleTarget,
+      UNIFORM_LAMBDA,
+      delta,
+    )
+
+    const opacityTarget = clamp(state.opacity * (1 + distance * OPACITY_BOOST), 0, 1)
+    material.uniforms.uOpacity.value = THREE.MathUtils.damp(
+      material.uniforms.uOpacity.value,
+      opacityTarget,
+      UNIFORM_LAMBDA,
+      delta,
+    )
+    material.opacity = material.uniforms.uOpacity.value
+
+    const pointer = material.uniforms.uPointer.value
+    pointer.x = THREE.MathUtils.damp(pointer.x, px, UNIFORM_LAMBDA, delta)
+    pointer.y = THREE.MathUtils.damp(pointer.y, py, UNIFORM_LAMBDA, delta)
   })
 
   if (!geometry) return null
@@ -218,15 +292,19 @@ export default function Model() {
   const meshKey = `${object3d}-${geometryType}`
 
   return object3d === "THREE.Points" ? (
-    <points key={meshKey} ref={meshRef}>
-      <primitive object={geometry} attach="geometry" />
-      <primitive object={material} attach="material" />
-    </points>
+    <group ref={groupRef}>
+      <points key={meshKey} ref={meshRef}>
+        <primitive object={geometry} attach="geometry" />
+        <primitive object={material} attach="material" />
+      </points>
+    </group>
   ) : (
-    <mesh key={meshKey} ref={meshRef}>
-      <primitive object={geometry} attach="geometry" />
-      <primitive object={material} attach="material" />
-    </mesh>
+    <group ref={groupRef}>
+      <mesh key={meshKey} ref={meshRef}>
+        <primitive object={geometry} attach="geometry" />
+        <primitive object={material} attach="material" />
+      </mesh>
+    </group>
   )
 }
 

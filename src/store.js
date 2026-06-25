@@ -52,6 +52,7 @@ const defaults = {
   depthTest: false,
   preserveDrawingBuffer: true,
   planeOpacity: 0.02,
+  interactive: false,
 }
 
 const initialPreset = presets.remembered[presets.preset]?.[0] ?? {}

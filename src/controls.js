@@ -115,5 +115,6 @@ export default function useLevaControls() {
     opacity: { value: initial.opacity, min: 0, max: 1, onChange: set("opacity") },
     pause: { value: initial.pause, onChange: set("pause") },
     pointSize: { value: initial.pointSize, min: 1, max: 20, onChange: set("pointSize") },
+    interactive: { value: initial.interactive, onChange: set("interactive") },
   }))
 }

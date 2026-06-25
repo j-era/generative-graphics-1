@@ -4,6 +4,7 @@ import {
   ShaderMaterial,
   UniformsLib,
   UniformsUtils,
+  Vector2,
   Vector3,
 } from "three"
 import * as THREE from "three"
@@ -41,6 +42,7 @@ export function createCustomUniforms(state) {
     uOpacity: { value: state.opacity },
     uAmbientLight: { value: new Vector3(ambient.r, ambient.g, ambient.b) },
     uPointSize: { value: state.pointSize },
+    uPointer: { value: new Vector2(0, 0) },
   }
 }
 
