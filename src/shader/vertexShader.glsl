@@ -10,7 +10,7 @@ uniform float uPointSize;
 
 // How strongly the pointer offsets the noise lookup; small so the field flows
 // with the cursor rather than jumping.
-const float POINTER_STRENGTH = 0.15;
+const float POINTER_STRENGTH = 0.06;
 
 varying vec2 vLookupUv;
 varying vec4 vModelViewPosition;

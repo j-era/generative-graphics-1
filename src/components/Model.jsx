@@ -24,16 +24,16 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
 // --- Pointer interaction tuning -------------------------------------------
 // Parallax translation of the group, in world units, at the screen edge.
-const PARALLAX_POSITION = 0.15
+const PARALLAX_POSITION = 0.07
 // Subtle tilt of the group, in radians, at the screen edge.
-const PARALLAX_TILT = 0.12
+const PARALLAX_TILT = 0.05
 // Extra displacement scale and opacity blended in by pointer distance.
-const SCALE_BOOST = 0.6
-const OPACITY_BOOST = 0.6
-// Damping rates (frame-rate independent via THREE.MathUtils.damp). Higher
-// numbers follow the pointer more eagerly.
-const TRANSFORM_LAMBDA = 3
-const UNIFORM_LAMBDA = 4
+const SCALE_BOOST = 0.25
+const OPACITY_BOOST = 0.2
+// Damping rates (frame-rate independent via THREE.MathUtils.damp). Lower
+// numbers ease toward the pointer more gently.
+const TRANSFORM_LAMBDA = 2
+const UNIFORM_LAMBDA = 2.5
 
 export default function Model() {
   const meshRef = useRef()
