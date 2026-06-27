@@ -216,6 +216,10 @@ export default function Model() {
     const state = useStore.getState()
     if (state.pause) return
 
+    // Cap delta to ~33ms to prevent jumps when rAF resumes after browser
+    // throttling during momentum scrolling.
+    delta = Math.min(delta, 1 / 30)
+
     stepRef.current += delta * state.speed * 0.01
     material.uniforms.uStep.value = stepRef.current
 
